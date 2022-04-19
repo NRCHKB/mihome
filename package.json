@@ -1,5 +1,5 @@
 {
-  "name": "node-mihome",
+  "name": "@nrchkb/node-mihome",
   "version": "0.0.32",
   "description": "Control Mi Home devices, such as Mi Robot Vacuums, Mi Air Purifiers, Mi Smart Home Gateway (Aqara) and more",
   "repository": {
