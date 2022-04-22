@@ -94,7 +94,7 @@ class MiotDevice extends EventEmitter {
     async send<T>(
         method: string,
         params: any[],
-        options: { retries?: number; sid?: number } = {}
+        options: { retries?: number; sid?: number; suppress?: boolean } = {}
     ) {
         return await miIOProtocol
             .getInstance()
@@ -186,6 +186,7 @@ class MiotDevice extends EventEmitter {
             params,
             {
                 retries: 4,
+                suppress: true,
             }
         )
 

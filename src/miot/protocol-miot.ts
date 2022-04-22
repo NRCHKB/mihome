@@ -357,7 +357,7 @@ class MiIOProtocol extends EventEmitter {
         address: string,
         method: string,
         params: any[] = [],
-        options: { retries?: number; sid?: number } = {}
+        options: { retries?: number; sid?: number; suppress?: boolean } = {}
     ) {
         this.log.trace(
             `Call ${address}: ${method} - ${JSON.stringify(
@@ -408,11 +408,14 @@ class MiIOProtocol extends EventEmitter {
                 if (retriesLeft-- > 0) {
                     send()
                 } else {
-                    this.log.error(
-                        `${address} <- Reached maximum number of retries, giving up ${method} - ${JSON.stringify(
-                            params
-                        )}`
-                    )
+                    const msg = `${address} <- Reached maximum number of retries, giving up ${method} - ${JSON.stringify(
+                        params
+                    )}`
+                    if (options.suppress) {
+                        this.log.trace(msg)
+                    } else {
+                        this.log.error(msg)
+                    }
                     const err: any = new Error('Call to device timed out')
                     err.code = 'timeout'
                     promise.reject(err)
