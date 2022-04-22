@@ -39,7 +39,7 @@ const createDevice = async ({
 }
 
 const fetchSpec = async (type: string) => {
-    console.log(`Checking spec for ${type}`)
+    log.debug(`Checking spec for ${type}`)
     const specName = `${type.replaceAll(':', '.')}.json`
 
     const specFilePath = path.join(
@@ -52,16 +52,16 @@ const fetchSpec = async (type: string) => {
     const fileExists = fs.existsSync(specFilePath)
 
     if (!fileExists) {
-        console.log(`Fetching spec for ${type}`)
+        log.debug(`Fetching spec for ${type}`)
 
         const cachedSpec = `https://raw.githubusercontent.com/NRCHKB/mihome/master/src/miot-spec/devices/${specName}`
         const sourceSpec = `https://miot-spec.org/miot-spec-v2/instance?type=${type}`
 
-        console.log(`Fetching spec for ${type} => cache`)
+        log.debug(`Fetching spec for ${type} => cache`)
         await fetch(cachedSpec)
             .then(async (res) => {
                 if (res.status === 404) {
-                    console.log(`Fetching spec for ${type} => source`)
+                    log.debug(`Fetching spec for ${type} => source`)
                     return await fetch(sourceSpec).then(async (res) => {
                         if (res.status === 404) {
                             throw Error(`${res.status}`)

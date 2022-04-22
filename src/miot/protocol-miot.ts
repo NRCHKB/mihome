@@ -28,12 +28,10 @@ class MiIOProtocol extends EventEmitter {
     }
 
     init() {
-        this.log.debug('init()')
         this.createSocket()
     }
 
     destroy() {
-        this.log.debug('destroy()')
         this.destroySocket()
     }
 
@@ -64,14 +62,12 @@ class MiIOProtocol extends EventEmitter {
     }
 
     destroySocket() {
-        this.log.debug('destroySocket()')
         if (this._socket) {
             this._socket.close()
         }
     }
 
     getDevices() {
-        this.log.debug('getDevices()')
         return Array.from(this._devices.keys()).map((address) => {
             return {
                 address,
@@ -81,13 +77,10 @@ class MiIOProtocol extends EventEmitter {
     }
 
     hasDevice(address: string) {
-        this.log.debug('hasDevice()')
         return this._devices.has(address)
     }
 
     getDevice(address: string) {
-        this.log.debug(`getDevice('${address}')`)
-        this.log.debug(`getDevice('${address}')`)
         if (!this._devices.has(address)) {
             this._devices.set(address, {})
         }
@@ -102,7 +95,6 @@ class MiIOProtocol extends EventEmitter {
     }
 
     setDevice(address: string, data: any) {
-        this.log.debug(`setDevice('${address}', data)`)
         const device = { ...data }
         if (device.token) {
             device._token = Buffer.from(device.token, 'hex')
@@ -120,13 +112,11 @@ class MiIOProtocol extends EventEmitter {
     }
 
     updateDevice(address: string, data: { id: string; token: string }) {
-        this.log.debug(`updateDevice('${address}', data)`)
         const device = Object.assign(this.getDevice(address), data)
         this.setDevice(address, device)
     }
 
     _onMessage(address: string, msg: any) {
-        this.log.debug(`_onMessage('${address}', '${msg}')`)
         try {
             const data = this._decryptMessage(address, msg)
 
@@ -136,7 +126,6 @@ class MiIOProtocol extends EventEmitter {
                 this._onHandshake(address)
             } else {
                 this.log.debug(`${address} -> Data`)
-                this.log.debug(data.toString())
                 this._onData(address, data)
             }
         } catch (e: any) {
@@ -249,7 +238,6 @@ class MiIOProtocol extends EventEmitter {
             .digest()
         digest.copy(header, 16)
 
-        this.log.debug(`${address} <- ${header}`)
         return Buffer.concat([header, encrypted])
     }
 
@@ -321,7 +309,7 @@ class MiIOProtocol extends EventEmitter {
         if (!address) {
             throw new Error('Missing address for handshake')
         }
-        this.log.debug(`Start handshake ${address}`)
+
         const device = this.getDevice(address)
 
         const needsHandshake =
@@ -371,7 +359,7 @@ class MiIOProtocol extends EventEmitter {
         params: any[] = [],
         options: any = {}
     ) {
-        this.log.debug(
+        this.log.trace(
             `Call ${address}: ${method} - ${JSON.stringify(
                 params
             )} - ${JSON.stringify(options)}`
@@ -421,7 +409,7 @@ class MiIOProtocol extends EventEmitter {
                 if (retriesLeft-- > 0) {
                     send()
                 } else {
-                    this.log.debug(
+                    this.log.error(
                         `${address} <- Reached maximum number of retries, giving up ${method} - ${JSON.stringify(
                             params
                         )}`
