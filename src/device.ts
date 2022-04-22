@@ -7,7 +7,6 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import { logger } from '@nrchkb/logger'
 
-const minify = require('node-json-minify')
 const log = logger('@nrchkb/mihome', 'device')
 
 const createDevice = async ({
@@ -75,7 +74,7 @@ const fetchSpec = async (type: string) => {
                 }
             })
             .then((json) => {
-                fs.writeFileSync(specFilePath, minify(JSON.stringify(json)), {
+                fs.writeFileSync(specFilePath, JSON.stringify(json), {
                     encoding: 'utf8',
                     flag: 'w',
                 })

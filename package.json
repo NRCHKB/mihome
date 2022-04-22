@@ -1,6 +1,6 @@
 {
   "name": "@nrchkb/mihome",
-  "version": "1.0.0-dev.5",
+  "version": "1.0.0-dev.8",
   "description": "Control Mi Home devices, such as Mi Robot Vacuums, Mi Air Purifiers, Mi Smart Home Gateway (Aqara) and more",
   "repository": {
     "type": "git",
