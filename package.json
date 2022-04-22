@@ -1,15 +1,12 @@
 {
   "name": "@nrchkb/mihome",
-  "version": "1.0.0-dev.0",
+  "version": "1.0.0-dev.5",
   "description": "Control Mi Home devices, such as Mi Robot Vacuums, Mi Air Purifiers, Mi Smart Home Gateway (Aqara) and more",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NRCHKB/node-mihome.git"
   },
   "main": "dist/index.js",
-  "directories": {
-    "lib": "dist"
-  },
   "engines": {
     "node": ">=14"
   },
@@ -44,8 +41,9 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^8.13.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "node-json-minify": "^3.0.0",
     "mocha": "^9.2.2",
+    "node-fetch-retry": "^2.0.0",
+    "node-json-minify": "^3.0.0",
     "prettier": "^2.6.2",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"
@@ -61,16 +59,16 @@
   },
   "homepage": "https://github.com/NRCHKB/node-mihome#readme",
   "bin": {
-    "@nrchkb/mihome": "dist/cli.js"
+    "nrchkb-mihome": "dist/cli/index.js"
   },
   "scripts": {
     "test": "mocha --require ts-node/register src/**/*.spec.ts",
     "prettier": "prettier --write src/**/*.ts",
     "prettier:scripts": "prettier --write scripts/**/*.ts",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && npm run copy-files",
     "clean": "npx rimraf@3 dist/",
     "cache": "ts-node scripts/generate-cache.ts",
-    "cli": "ts-node src/cli.ts"
+    "copy-files": "npx copyfiles@2 -u 1 src/**/GITKEEP dist/"
   },
   "files": [
     "/dist"

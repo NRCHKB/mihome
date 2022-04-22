@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "es5",
     "module": "commonjs",
     "rootDir": "./src",
     "allowJs": true,
@@ -22,6 +22,7 @@
     "noUnusedParameters": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "importHelpers": true,
     "lib": [
       "ES2021.String"
     ]

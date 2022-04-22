@@ -513,4 +513,4 @@ class Singleton {
 
 export default Singleton
 
-export { MiIOProtocol }
+export { Singleton as MiIOProtocol }

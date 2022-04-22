@@ -1,22 +1,15 @@
-import fetch from 'node-fetch'
 import * as fs from 'fs'
 import { InstancesResponse } from '../src/types/MiotInstance'
 import path from 'path'
-const minify = require('node-json-minify')
 
-const sleep = (milliseconds: number) => {
-    const date = Date.now()
-    let currentDate = null
-    do {
-        currentDate = Date.now()
-    } while (currentDate - date < milliseconds)
-}
+const fetch = require('node-fetch-retry')
+const minify = require('node-json-minify')
 
 ;(async () => {
     console.log(`Fetching instances`)
     await fetch('https://miot-spec.org/miot-spec-v2/instances?status=all')
-        .then(async (res) => await res.json())
-        .then((json) =>
+        .then(async (res: any) => await res.json())
+        .then((json: any) =>
             fs.writeFileSync(
                 'src/miot-spec/instances.json',
                 minify(JSON.stringify(json)),
@@ -33,10 +26,11 @@ const sleep = (milliseconds: number) => {
     for (const i of mergedInstancesCache.instances) {
         console.log(`Fetching ${i.type}`)
         await fetch(
-            `https://miot-spec.org/miot-spec-v2/instance?type=${i.type}`
+            `https://miot-spec.org/miot-spec-v2/instance?type=${i.type}`,
+            { retry: 100, pause: 1000, silent: true }
         )
-            .then(async (res) => await res.json())
-            .then((json) => {
+            .then(async (res: any) => await res.json())
+            .then((json: any) => {
                 const specFilePath = path.join(
                     'src',
                     'miot-spec',
@@ -49,6 +43,5 @@ const sleep = (milliseconds: number) => {
                     flag: 'w',
                 })
             })
-        sleep(30)
     }
 })()
