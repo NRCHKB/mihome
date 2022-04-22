@@ -5,6 +5,7 @@ import Device from '../types/MiotDevice'
 import { logger } from '@nrchkb/logger'
 import { Loggers } from '@nrchkb/logger/src/types'
 import path from 'path'
+import util from 'util'
 
 const sleep = (time: number) => {
     return new Promise<void>((resolve) => {
@@ -83,21 +84,18 @@ class MiotDevice extends EventEmitter {
     }
 
     destroy() {
-        this.log.debug('destroy()')
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval)
         }
     }
 
     async send<T>(method: string, params: any[], options = {}) {
-        this.log.debug('send(method, params, options)')
         return await miIOProtocol
             .getInstance()
             .send<T>(this.address, method, params, options)
     }
 
     async poll() {
-        this.log.debug('poll()')
         if (this.refresh > 0) {
             this.refreshInterval = setInterval(async () => {
                 await this.loadProperties()
@@ -106,7 +104,6 @@ class MiotDevice extends EventEmitter {
     }
 
     async loadProperties(props?: string[]) {
-        this.log.debug('loadProperties(props)')
         try {
             if (typeof props === 'undefined') {
                 props = Object.keys(this.propertiesToMonitor)
@@ -149,17 +146,29 @@ class MiotDevice extends EventEmitter {
     }
 
     async getProperties(props: string[]) {
-        this.log.debug('getProperties(props)')
         const did = this.id
         const params = props.map((prop) => {
-            this.log.debug(`getProperties(props) => ${prop}`)
             const { siid, piid } = this.propertiesToMonitor[prop]
             return { did, siid, piid }
         })
-        const result = await this.send<{ code: number; value: any }[]>(
+
+        const result = await this.send<{ code: number; value: any }[] | string>(
             'get_properties',
             params
         )
+
+        if (!Array.isArray(result)) {
+            if (result === 'unknown_method') {
+                this.log.error(
+                    `Error unknown_method for ${util.inspect(params)}`
+                )
+                return undefined
+            } else {
+                this.log.error(`Error ${result} for ${util.inspect(params)}`)
+                return undefined
+            }
+        }
+
         return result.map(({ code, value }) => {
             if (code === 0) {
                 return value
