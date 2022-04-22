@@ -1,27 +1,51 @@
-type Access = 'read' | 'notify' | 'write'
+type AccessMode = 'read' | 'notify' | 'write'
 
 type ValueListItem = {
     value: number
     description: string
 }
 
+type DataFormat =
+    | 'bool'
+    | 'uint8'
+    | 'uint16'
+    | 'uint32'
+    | 'int8'
+    | 'int16'
+    | 'int32'
+    | 'int64'
+    | 'float'
+    | 'string'
+    | 'hex'
+
+type Unit =
+    | 'percentage'
+    | 'celsius'
+    | 'seconds'
+    | 'minutes'
+    | 'hours'
+    | 'days'
+    | 'kelvin'
+    | 'pascal'
+    | 'arcdegrees'
+    | 'rgb'
+    | 'watt'
+    | 'litre'
+    | 'ppm'
+    | 'lux'
+    | 'mg/m3'
+    | 'none'
+
 type Property = {
     iid: number
     type: string
     description: string
-    format: 'string' | 'uint8' | 'bool' | 'float' | 'uint16'
-    access: Access[]
+    format: DataFormat
+    access: AccessMode[]
     'value-list'?: ValueListItem[]
-    unit?:
-        | 'celsius'
-        | 'percentage'
-        | 'hours'
-        | 'pascal'
-        | 'ppm'
-        | 'mg/m3'
-        | 'kelvin'
-        | 'rgb'
-    'value-range'?: number[]
+    unit?: Unit
+    'value-range'?: [min: number, max: number, step: number]
+    'max-length'?: number
 }
 
 export default Property
