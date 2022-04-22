@@ -5,9 +5,7 @@ import { hideBin } from 'yargs/helpers'
 import { loggerSetup } from '@nrchkb/logger/src'
 
 loggerSetup({
-    debugEnabled: true,
     errorEnabled: true,
-    traceEnabled: true,
 })
 
 yargs(hideBin(process.argv))

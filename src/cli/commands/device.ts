@@ -1,11 +1,8 @@
 // noinspection JSUnusedGlobalSymbols
 
 import type { CommandBuilder } from 'yargs'
-import { MiIOProtocol } from '../../miot/protocol-miot'
-import { createDevice } from '../../device'
+import { MiIOProtocol, createDevice } from '../../'
 import DeviceOptions from '../../types/DeviceOptions'
-import * as util from 'util'
-import { logger } from '@nrchkb/logger'
 
 type Options = {
     name: string
@@ -14,8 +11,6 @@ type Options = {
 
 export const command: string = 'device [id] [model] [address] [token] [refresh]'
 export const desc: string = 'Connect to device and list it.'
-
-const log = logger('@nrchkb/mihome', 'cli')
 
 export const builder: CommandBuilder<Options, Options> = (yargs) =>
     yargs
@@ -44,19 +39,14 @@ export const handler = async (argv: DeviceOptions) => {
     new MiIOProtocol().getInstance().init()
     const device = await createDevice(argv)
     device.on('properties', (data) => {
-        log.debug("on('properties')")
-        log.debug(util.inspect(data))
+        console.log("on('properties') =>", data)
     })
     device.on('unavailable', (data) => {
-        log.error("on('unavailable')")
-        log.error(util.inspect(data))
+        console.error("on('unavailable') =>", data)
     })
     device.on('available', (data) => {
-        log.debug("on('available')")
-        log.debug(util.inspect(data))
+        console.log("on('available') =>", data)
     })
-    await device.init().then(() => {
-        log.debug('init()')
-    })
+    await device.init()
     //device.destroy()
 }
