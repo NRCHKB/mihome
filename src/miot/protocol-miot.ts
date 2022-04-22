@@ -357,7 +357,7 @@ class MiIOProtocol extends EventEmitter {
         address: string,
         method: string,
         params: any[] = [],
-        options: any = {}
+        options: { retries?: number; sid?: number } = {}
     ) {
         this.log.trace(
             `Call ${address}: ${method} - ${JSON.stringify(
@@ -402,8 +402,7 @@ class MiIOProtocol extends EventEmitter {
                 },
             }
 
-            let retriesLeft =
-                options.retries >= 0 ? options.retries : this.retries
+            let retriesLeft = Math.max(0, options.retries ?? this.retries)
             const retry = () => {
                 if (resolved) return
                 if (retriesLeft-- > 0) {

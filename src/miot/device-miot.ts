@@ -15,10 +15,12 @@ const sleep = (time: number) => {
     })
 }
 
+type PropertiesMap = {
+    [key: string]: string
+}
+
 class MiotDevice extends EventEmitter {
-    private properties: {
-        [key: string]: string
-    }
+    private properties: PropertiesMap
     private propertiesToMonitor: {
         [key: string]: { siid: number; piid: number; desc: string }
     }
@@ -89,7 +91,11 @@ class MiotDevice extends EventEmitter {
         }
     }
 
-    async send<T>(method: string, params: any[], options = {}) {
+    async send<T>(
+        method: string,
+        params: any[],
+        options: { retries?: number; sid?: number } = {}
+    ) {
         return await miIOProtocol
             .getInstance()
             .send<T>(this.address, method, params, options)
@@ -137,9 +143,32 @@ class MiotDevice extends EventEmitter {
                 data[prop] = result[i]
             })
 
-            this.properties = Object.assign(this.properties, data)
+            const getDifference = (
+                oldData: PropertiesMap,
+                newData: PropertiesMap
+            ) =>
+                Object.fromEntries(
+                    Object.entries(newData)
+                        .filter(([key, value]) => oldData[key] !== value)
+                        .map(([key, value]) => [
+                            key,
+                            { previous: this.properties[key], current: value },
+                        ])
+                )
+            const diff = getDifference(this.properties, data)
+
+            if (Object.keys(diff).length > 0) {
+                this.emit('properties', data)
+
+                this.emit('change', diff)
+                Object.entries(diff).forEach(([key]) => {
+                    this.emit(`change:${key}`, diff[key])
+                })
+
+                this.properties = data
+            }
+
             this.emit('available', true)
-            this.emit('properties', data)
         } catch (e: any) {
             this.emit('unavailable', e?.message)
         }
@@ -154,7 +183,10 @@ class MiotDevice extends EventEmitter {
 
         const result = await this.send<{ code: number; value: any }[] | string>(
             'get_properties',
-            params
+            params,
+            {
+                retries: 4,
+            }
         )
 
         if (!Array.isArray(result)) {

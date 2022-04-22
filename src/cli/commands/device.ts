@@ -38,8 +38,8 @@ export const builder: CommandBuilder<Options, Options> = (yargs) =>
 export const handler = async (argv: DeviceOptions) => {
     new MiIOProtocol().getInstance().init()
     const device = await createDevice(argv)
-    device.on('properties', (data) => {
-        console.log("on('properties') =>", data)
+    device.on('change', (data) => {
+        console.log("on('change') =>", data)
     })
     device.on('unavailable', (data) => {
         console.error("on('unavailable') =>", data)
@@ -47,6 +47,8 @@ export const handler = async (argv: DeviceOptions) => {
     device.on('available', (data) => {
         console.log("on('available') =>", data)
     })
-    await device.init()
+    await device.init().then((data) => {
+        console.log('init() =>', data)
+    })
     //device.destroy()
 }
