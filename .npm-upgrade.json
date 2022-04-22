@@ -1,0 +1,8 @@
+{
+  "ignore": {
+    "node-fetch": {
+      "versions": ">=3",
+      "reason": "TypeScript compat"
+    }
+  }
+}
