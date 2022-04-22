@@ -113,7 +113,8 @@ class MiotDevice extends EventEmitter {
             }
             const data: { [key: string]: string } = {}
             const propsChunks = []
-            const chunkSize = 16
+            // Add it as configurable param as it can speed up fetching but cause errors like 16 for purifier 3h
+            const chunkSize = 15
             for (let i = 0; i < props.length; i += chunkSize) {
                 propsChunks.push(props.slice(i, i + chunkSize))
             }
@@ -157,10 +158,7 @@ class MiotDevice extends EventEmitter {
         })
         const result = await this.send<{ code: number; value: any }[]>(
             'get_properties',
-            params,
-            {
-                retries: 1,
-            }
+            params
         )
         return result.map(({ code, value }) => {
             if (code === 0) {

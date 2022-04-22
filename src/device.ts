@@ -17,7 +17,7 @@ const createDevice = async ({
     refresh,
 }: DeviceOptions) => {
     const deviceInstance = (instances as InstancesResponse).instances
-        .filter((i) => i.model === model)
+        .filter((i) => i.model === model && i.status === 'released')
         .reduce((previous, current) => {
             if (current.version > previous.version) {
                 return current

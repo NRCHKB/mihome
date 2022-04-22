@@ -126,6 +126,7 @@ class MiIOProtocol extends EventEmitter {
     }
 
     _onMessage(address: string, msg: any) {
+        this.log.debug(`_onMessage('${address}', '${msg}')`)
         try {
             const data = this._decryptMessage(address, msg)
 
@@ -339,7 +340,6 @@ class MiIOProtocol extends EventEmitter {
             this._handshake(address).catch(reject)
 
             device._handshakeResolve = () => {
-                // eslint-disable-next-line no-shadow
                 clearTimeout(device._handshakeTimeout)
                 device._handshakeResolve = null
                 device._handshakeTimeout = null
@@ -419,7 +419,6 @@ class MiIOProtocol extends EventEmitter {
             const retry = () => {
                 if (resolved) return
                 if (retriesLeft-- > 0) {
-                    // eslint-disable-next-line no-use-before-define
                     send()
                 } else {
                     this.log.debug(
