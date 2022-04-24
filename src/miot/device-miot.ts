@@ -217,8 +217,10 @@ class MiotDevice extends EventEmitter {
             }
         }
 
-        return result.map(({ code, value }) => {
-            this.log.debug(`getProperties(props) code:${code} value:${value}`)
+        return result.map(({ code, value }, index) => {
+            this.log.debug(
+                `Received ${props[index]} code:${code} value:${value}`
+            )
             return code === 0 ? value : undefined
         })
     }
