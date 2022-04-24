@@ -6,11 +6,12 @@ import path from 'path'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import { logger } from '@nrchkb/logger'
+import util from 'util'
 
 const log = logger('@nrchkb/mihome', 'device')
 
 const createDevice = async (options: DeviceOptions) => {
-    log.debug(`Creating device with ${options}`)
+    log.debug(`Creating device with ${util.inspect(options)}`)
     const { id, model, token, address, refresh, chunkSize } = options
     const deviceInstance = (instances as InstancesResponse).instances
         .filter((i) => i.model === model && i.status === 'released')
