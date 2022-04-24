@@ -2,11 +2,9 @@
 
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { loggerSetup } from '@nrchkb/logger/src'
+const { version } = require('../../package.json')
 
-loggerSetup({
-    errorEnabled: true,
-})
+console.error(`Using @nrchkb/mihome@${version}`)
 
 yargs(hideBin(process.argv))
     .commandDir('commands')
