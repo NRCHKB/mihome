@@ -380,7 +380,7 @@ class MiIOProtocol extends EventEmitter {
 
             // Handler for incoming messages
             const promise = {
-                resolve: (res: any) => {
+                resolve: (res: T) => {
                     resolved = true
                     device._promises.delete(request.id)
 
