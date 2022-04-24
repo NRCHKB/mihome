@@ -9,13 +9,9 @@ import { logger } from '@nrchkb/logger'
 
 const log = logger('@nrchkb/mihome', 'device')
 
-const createDevice = async ({
-    id,
-    model,
-    token,
-    address,
-    refresh,
-}: DeviceOptions) => {
+const createDevice = async (options: DeviceOptions) => {
+    log.debug(`Creating device with ${options}`)
+    const { id, model, token, address, refresh, chunkSize } = options
     const deviceInstance = (instances as InstancesResponse).instances
         .filter((i) => i.model === model && i.status === 'released')
         .reduce((previous, current) => {
@@ -35,7 +31,7 @@ const createDevice = async ({
         throw Error(`Failed to fetch spec for ${type}`)
     }
 
-    return new MiotDevice(id, type, address, token, refresh)
+    return new MiotDevice(id, type, address, token, refresh, chunkSize)
 }
 
 const fetchSpec = async (type: string) => {

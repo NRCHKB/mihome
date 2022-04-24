@@ -4,6 +4,7 @@ type DeviceOptions = {
     refresh?: number
     address: string
     token: string
+    chunkSize?: number
 }
 
 export default DeviceOptions
