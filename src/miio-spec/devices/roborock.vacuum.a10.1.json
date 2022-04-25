@@ -1,0 +1,46 @@
+{
+  "type": "miio:vacuum",
+  "description": "Robot Cleaner",
+  "properties": [
+    {
+      "name": "error_code",
+      "description": "Error",
+      "format": "uint8",
+      "access": [
+        "read"
+      ]
+    },
+    {
+      "name": "state",
+      "description": "State",
+      "format": "uint8",
+      "access": [
+        "read"
+      ],
+      "value-list": [
+        {
+          "value": 1,
+          "description": "initiating"
+        }
+      ]
+    },
+    {
+      "name": "battery",
+      "description": "Battery Level",
+      "format": "uint8",
+      "access": [
+        "read"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "method": "app_start",
+      "description": "Start a cleaning session"
+    },
+    {
+      "method": "app_pause",
+      "description": "Pause the current cleaning session"
+    }
+  ]
+}
