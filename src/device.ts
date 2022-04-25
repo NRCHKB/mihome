@@ -3,7 +3,7 @@ import miotInstances from './miot-spec/instances.json'
 import miioInstances from './miio-spec/instances.json'
 import MiotDevice from './device-miot'
 import MiioDevice from './device-miio'
-import { MiotInstancesResponse } from './types/miot/MiotInstance'
+import { MiotInstance, MiotInstancesResponse } from './types/miot/MiotInstance'
 import path from 'path'
 import fs from 'fs'
 import fetch from 'node-fetch'
@@ -28,25 +28,34 @@ const createDevice = async (options: DeviceOptions) => {
         protocol ?? (miio ? 'miio' : miot ? 'miot' : undefined)
 
     if (derivedProtocol === 'miio' && miio) {
-        const specExists = await fetchMiioSpec(miio)
+        const specExists = await fetchMiioSpec(`${miio.model}:${miio.version}`)
         if (!specExists) {
             throw Error(`Failed to fetch spec for ${miio}`)
         }
-        return new MiioDevice(id, miio, address, token, refresh, chunkSize)
+        return new MiioDevice(
+            id,
+            miio.model,
+            address,
+            token,
+            refresh,
+            chunkSize
+        )
     }
 
     if (derivedProtocol === 'miot' && miot) {
-        const specExists = await fetchMiotSpec(miot)
+        const specExists = await fetchMiotSpec(miot.type)
         if (!specExists) {
             throw Error(`Failed to fetch spec for ${miot}`)
         }
-        return new MiotDevice(id, miot, address, token, refresh, chunkSize)
+        return new MiotDevice(id, miot.type, address, token, refresh, chunkSize)
     }
 
     throw Error(`Failed to find protocol for ${model}`)
 }
 
-const checkForSpec = (model: string): { miio?: string; miot?: string } => {
+const checkForSpec = (
+    model: string
+): { miio?: MiioInstance; miot?: MiotInstance } => {
     const miotReleasedInstances = (
         miotInstances as MiotInstancesResponse
     ).instances?.filter((i) => i.model === model && i.status === 'released')
@@ -55,7 +64,7 @@ const checkForSpec = (model: string): { miio?: string; miot?: string } => {
               if (current.version > previous.version) {
                   return current
               } else return previous
-          })?.type
+          })
         : undefined
 
     const miioReleasedInstances = (miioInstances as MiioInstance[])?.filter(
@@ -72,7 +81,7 @@ const checkForSpec = (model: string): { miio?: string; miot?: string } => {
 
     const result = {
         miot,
-        miio: miio ? `${miio.model}:${miio.version}` : undefined,
+        miio,
     }
     log.debug(`Found specs ${util.inspect(result)}`)
 

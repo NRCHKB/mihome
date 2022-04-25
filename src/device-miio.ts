@@ -27,6 +27,7 @@ export default class extends EventEmitter {
     }
     private refreshInterval: NodeJS.Timer | undefined
     private log: Loggers
+    private type: string | undefined
 
     constructor(
         private id: string,
@@ -63,6 +64,8 @@ export default class extends EventEmitter {
         this.log.debug(
             `Loaded spec for ${deviceData.description} ${deviceData.type}`
         )
+
+        this.type = deviceData.type
 
         deviceData.properties.forEach((property) => {
             const key = property.type
@@ -185,7 +188,13 @@ export default class extends EventEmitter {
     }
 
     async getProperties(props: string[]) {
-        return await this.send<any[]>('get_prop', props, {
+        let method = 'get_props'
+
+        if (this.type == 'miio:vacuum') {
+            method = 'get_status'
+        }
+
+        return await this.send<any[]>(method, props, {
             retries: 10,
         })
     }
