@@ -20,11 +20,11 @@
     "useUnknownInCatchVariables": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "resolveJsonModule": true,
     "importHelpers": false,
     "lib": [
-      "ES2021.String"
+      "ES2021"
     ]
   },
   "exclude": [

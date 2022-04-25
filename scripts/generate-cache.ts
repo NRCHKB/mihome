@@ -1,15 +1,20 @@
 import * as fs from 'fs'
-import { MiotInstancesResponse } from '../src/types/miot/MiotInstance'
 import path from 'path'
+
+import MiotDevice from '../src/types/miot/MiotDevice'
+import { MiotInstancesResponse } from '../src/types/miot/MiotInstance'
 
 const fetch = require('node-fetch-retry')
 const minify = require('node-json-minify')
 
 ;(async () => {
-    console.log(`Fetching instances`)
+    console.log('Fetching instances')
     await fetch('https://miot-spec.org/miot-spec-v2/instances?status=all')
-        .then(async (res: any) => await res.json())
-        .then((json: any) =>
+        .then(
+            async (res: { json: () => MiotInstancesResponse }) =>
+                await res.json()
+        )
+        .then((json: MiotInstancesResponse) =>
             fs.writeFileSync(
                 'src/miot-spec/instances.json',
                 minify(JSON.stringify(json)),
@@ -29,8 +34,8 @@ const minify = require('node-json-minify')
             `https://miot-spec.org/miot-spec-v2/instance?type=${i.type}`,
             { retry: 100, pause: 1000, silent: true }
         )
-            .then(async (res: any) => await res.json())
-            .then((json: any) => {
+            .then(async (res: { json: () => MiotDevice }) => await res.json())
+            .then((json: MiotDevice) => {
                 const specFilePath = path.join(
                     'src',
                     'miot-spec',

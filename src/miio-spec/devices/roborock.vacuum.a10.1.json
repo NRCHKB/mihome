@@ -3,20 +3,16 @@
   "description": "Robot Cleaner",
   "properties": [
     {
-      "name": "error_code",
+      "type": "error_code",
       "description": "Error",
       "format": "uint8",
-      "access": [
-        "read"
-      ]
+      "access": ["read"]
     },
     {
-      "name": "state",
+      "type": "state",
       "description": "State",
       "format": "uint8",
-      "access": [
-        "read"
-      ],
+      "access": ["read", "write"],
       "value-list": [
         {
           "value": 1,
@@ -25,21 +21,20 @@
       ]
     },
     {
-      "name": "battery",
+      "type": "battery",
       "description": "Battery Level",
       "format": "uint8",
-      "access": [
-        "read"
-      ]
+      "unit": "percentage",
+      "access": ["read"]
     }
   ],
   "actions": [
     {
-      "method": "app_start",
+      "type": "app_start",
       "description": "Start a cleaning session"
     },
     {
-      "method": "app_pause",
+      "type": "app_pause",
       "description": "Pause the current cleaning session"
     }
   ]

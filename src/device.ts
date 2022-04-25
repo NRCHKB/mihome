@@ -24,7 +24,7 @@ const createDevice = async (options: DeviceOptions) => {
         throw new Error(`Model ${model} is not supported`)
     }
 
-    let derivedProtocol: Protocol | undefined =
+    const derivedProtocol: Protocol | undefined =
         protocol ?? (miio ? 'miio' : miot ? 'miot' : undefined)
 
     if (derivedProtocol === 'miio' && miio) {
@@ -70,7 +70,10 @@ const checkForSpec = (model: string): { miio?: string; miot?: string } => {
           })
         : undefined
 
-    const result = { miot, miio: miio ? `${miio.model}:${miio.version}` : undefined }
+    const result = {
+        miot,
+        miio: miio ? `${miio.model}:${miio.version}` : undefined,
+    }
     log.debug(`Found specs ${util.inspect(result)}`)
 
     return result
