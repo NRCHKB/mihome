@@ -7,7 +7,7 @@ import { logger } from '@nrchkb/logger'
 
 const PORT = 54321
 
-class MiIOProtocol extends EventEmitter {
+class MiProtocol extends EventEmitter {
     protected _devices: Map<string, any>
     protected timeout: number
     protected retries: number
@@ -17,7 +17,7 @@ class MiIOProtocol extends EventEmitter {
 
     constructor() {
         super()
-        this.log = logger('@nrchkb/mihome', 'MiIOProtocol')
+        this.log = logger('@nrchkb/mihome', 'MiProtocol')
 
         this.log.error('Initialized')
 
@@ -483,11 +483,11 @@ class MiIOProtocol extends EventEmitter {
 }
 
 class Singleton {
-    private static instance: MiIOProtocol
+    private static instance: MiProtocol
 
     constructor() {
         if (!Singleton.instance) {
-            Singleton.instance = new MiIOProtocol()
+            Singleton.instance = new MiProtocol()
         }
     }
 
@@ -502,4 +502,4 @@ class Singleton {
 
 export default Singleton
 
-export { Singleton as MiIOProtocol }
+export { Singleton as MiProtocol }

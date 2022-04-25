@@ -1,4 +1,4 @@
 import { createDevice } from './device'
-import { MiIOProtocol } from './miot/protocol-miot'
+import { MiProtocol } from './protocol-mi'
 
-export { createDevice, MiIOProtocol }
+export { createDevice, MiProtocol }
