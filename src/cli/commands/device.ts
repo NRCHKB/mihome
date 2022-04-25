@@ -1,7 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import type { CommandBuilder } from 'yargs'
-import { MiIOProtocol, createDevice } from '../../'
+import { MiProtocol, createDevice } from '../../'
 import DeviceOptions from '../../types/DeviceOptions'
 
 type Options = {
@@ -10,7 +10,7 @@ type Options = {
 }
 
 export const command: string =
-    'device [id] [model] [address] [token] [refresh] [chunkSize]'
+    'device [id] [model] [address] [token] [refresh] [chunkSize] [protocol]'
 export const desc: string = 'Connect to device and list it.'
 
 export const builder: CommandBuilder<Options, Options> = (yargs) =>
@@ -41,9 +41,14 @@ export const builder: CommandBuilder<Options, Options> = (yargs) =>
             describe: 'Chunk size',
             default: 15,
         })
+        .positional('protocol', {
+            type: 'string',
+            describe: 'Protocol',
+            default: 'miot',
+        })
 
 export const handler = async (argv: DeviceOptions) => {
-    new MiIOProtocol().getInstance().init()
+    new MiProtocol().getInstance().init()
     const device = await createDevice(argv)
 
     function exitHandler(

@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import { InstancesResponse } from '../src/types/MiotInstance'
+import { MiotInstancesResponse } from '../src/types/miot/MiotInstance'
 import path from 'path'
 
 const fetch = require('node-fetch-retry')
@@ -21,7 +21,7 @@ const minify = require('node-json-minify')
         )
 
     const mergedInstancesCache =
-        require('../src/miot-spec/instances.json') as InstancesResponse
+        require('../src/miot-spec/instances.json') as MiotInstancesResponse
 
     for (const i of mergedInstancesCache.instances) {
         console.log(`Fetching ${i.type}`)

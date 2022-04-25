@@ -1,12 +1,12 @@
 import EventEmitter from 'events'
 import * as fs from 'fs'
-import miIOProtocol from './protocol-miot'
-import Device from '../types/MiotDevice'
+import MiProtocol from './protocol-mi'
 import { logger } from '@nrchkb/logger'
 import { Loggers } from '@nrchkb/logger/src/types'
 import path from 'path'
-import util from 'util'
-import { Property, ValueType } from '../types/MiotProperty'
+import ValueType from './types/ValueType'
+import MiioDevice from './types/miio/MiioDevice'
+import MiioProperty from './types/miio/MiioProperty'
 
 const sleep = (time: number) => {
     return new Promise<void>((resolve) => {
@@ -20,17 +20,17 @@ type PropertiesMap = {
     [key: string]: ValueType
 }
 
-class MiotDevice extends EventEmitter {
+export default class extends EventEmitter {
     private properties: PropertiesMap
     private propertiesToMonitor: {
-        [key: string]: Property & { siid: number; desc: string }
+        [key: string]: MiioProperty
     }
     private refreshInterval: NodeJS.Timer | undefined
     private log: Loggers
 
     constructor(
         private id: string,
-        private type: string,
+        private model: string,
         private address: string,
         token: string,
         private refresh: number = 15000,
@@ -38,12 +38,12 @@ class MiotDevice extends EventEmitter {
     ) {
         super()
 
-        this.log = logger('@nrchkb/mihome', 'MiotDevice', this.id)
+        this.log = logger('@nrchkb/mihome', 'MiioDevice', this.id)
 
         this.propertiesToMonitor = {}
         this.properties = {}
 
-        miIOProtocol.getInstance().updateDevice(address, {
+        MiProtocol.getInstance().updateDevice(address, {
             id,
             token,
         })
@@ -52,32 +52,22 @@ class MiotDevice extends EventEmitter {
     async init(): Promise<any> {
         const specFilePath = path.join(
             __dirname,
-            '..',
-            'miot-spec',
+            'miio-spec',
             'devices',
-            `${this.type.replaceAll(':', '.')}.json`
+            `${this.model.replaceAll(':', '.')}.json`
         )
         this.log.debug(`Reading spec from ${specFilePath}`)
         const data = await fs.readFileSync(specFilePath)
-        const deviceData = JSON.parse(data.toString()) as Device
+        const deviceData = JSON.parse(data.toString()) as MiioDevice
 
         this.log.debug(
             `Loaded spec for ${deviceData.description} ${deviceData.type}`
         )
 
-        deviceData.services.forEach((service) => {
-            service.properties.forEach((property) => {
-                const key = [
-                    service.type.split(':')[3],
-                    property.type.split(':')[3],
-                ].join(':')
-                this.log.debug(`Registered ${key}`)
-                this.propertiesToMonitor[key] = {
-                    ...property,
-                    siid: service.iid,
-                    desc: `${service.description} - ${property.description}`,
-                }
-            })
+        deviceData.properties.forEach((property) => {
+            const key = property.type
+            this.log.debug(`Registered ${key}`)
+            this.propertiesToMonitor[key] = property
         })
 
         await this.loadProperties(undefined, { init: true })
@@ -97,9 +87,12 @@ class MiotDevice extends EventEmitter {
         params: any[],
         options: { retries?: number; sid?: number; suppress?: boolean } = {}
     ) {
-        return await miIOProtocol
-            .getInstance()
-            .send<T>(this.address, method, params, options)
+        return await MiProtocol.getInstance().send<T>(
+            this.address,
+            method,
+            params,
+            options
+        )
     }
 
     async poll() {
@@ -192,36 +185,8 @@ class MiotDevice extends EventEmitter {
     }
 
     async getProperties(props: string[]) {
-        const did = this.id
-        const params = props.map((prop) => {
-            const { siid, iid: piid } = this.propertiesToMonitor[prop]
-            return { did, siid, piid }
-        })
-
-        const result = await this.send<
-            { code: number; value: ValueType }[] | string
-        >('get_properties', params, {
+        return await this.send<any[]>('get_prop', props, {
             retries: 10,
-            suppress: true,
-        })
-
-        if (!Array.isArray(result)) {
-            if (result === 'unknown_method') {
-                this.log.error(
-                    `Error unknown_method for ${util.inspect(params)}`
-                )
-                return undefined
-            } else {
-                this.log.error(`Error ${result} for ${util.inspect(params)}`)
-                return undefined
-            }
-        }
-
-        return result.map(({ code, value }, index) => {
-            this.log.debug(
-                `Received ${props[index]} code:${code} value:${value}`
-            )
-            return code === 0 ? value : undefined
         })
     }
 
@@ -230,40 +195,22 @@ class MiotDevice extends EventEmitter {
     }
 
     async setProperty(
-        prop: string,
-        value: ValueType,
-        options: { refresh?: boolean } = {}
+        method: string,
+        params: ValueType[],
+        options: {
+            refresh?: boolean
+            retries?: number
+            sid?: number
+            suppress?: boolean
+        } = {}
     ) {
-        const def = this.propertiesToMonitor[prop]
+        const result = await this.send<any[]>(method, params, options)
 
-        if (!def) {
-            throw new Error(`Property ${prop} is not defined`)
-        }
-
-        if (!def.access.includes('write')) {
-            throw new Error(`Property ${prop} cannot be written`)
-        }
-
-        const result = await this.send<{ code: number }[]>('set_properties', [
-            {
-                did: this.id,
-                siid: def.siid,
-                piid: def.iid,
-                value,
-            },
-        ])
-
-        if (result?.[0]?.code !== 0) {
-            throw new Error('Could not perform operation')
-        }
-
-        if (!options.refresh) {
+        if (options.refresh) {
             await sleep(50)
-            await this.loadProperties([prop])
+            await this.loadProperties()
         }
 
-        return result[0]
+        return result
     }
 }
-
-export default MiotDevice

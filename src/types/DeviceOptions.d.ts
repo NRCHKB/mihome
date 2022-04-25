@@ -1,3 +1,5 @@
+import Protocol from './Protocol'
+
 type DeviceOptions = {
     id: string
     model: string
@@ -5,6 +7,7 @@ type DeviceOptions = {
     address: string
     token: string
     chunkSize?: number
+    protocol?: Protocol
 }
 
 export default DeviceOptions
