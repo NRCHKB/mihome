@@ -1,5 +1,7 @@
 type AccessMode = 'read' | 'notify' | 'write'
 
+type ValueType = number | boolean | string
+
 type ValueListItem = {
     value: number
     description: string
@@ -49,3 +51,5 @@ type Property = {
 }
 
 export default Property
+
+export { AccessMode, ValueType, Unit, ValueListItem, Property, DataFormat }

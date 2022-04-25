@@ -6,6 +6,7 @@ import { logger } from '@nrchkb/logger'
 import { Loggers } from '@nrchkb/logger/src/types'
 import path from 'path'
 import util from 'util'
+import { Property, ValueType } from '../types/MiotProperty'
 
 const sleep = (time: number) => {
     return new Promise<void>((resolve) => {
@@ -16,13 +17,13 @@ const sleep = (time: number) => {
 }
 
 type PropertiesMap = {
-    [key: string]: string
+    [key: string]: ValueType
 }
 
 class MiotDevice extends EventEmitter {
     private properties: PropertiesMap
     private propertiesToMonitor: {
-        [key: string]: { siid: number; piid: number; desc: string }
+        [key: string]: Property & { siid: number; desc: string }
     }
     private refreshInterval: NodeJS.Timer | undefined
     private log: Loggers
@@ -32,7 +33,8 @@ class MiotDevice extends EventEmitter {
         private type: string,
         private address: string,
         token: string,
-        private refresh: number = 15000
+        private refresh: number = 15000,
+        private chunkSize: number = 15
     ) {
         super()
 
@@ -48,7 +50,6 @@ class MiotDevice extends EventEmitter {
     }
 
     async init(): Promise<any> {
-        //`../miot-spec/devices/${this.type}.json`
         const specFilePath = path.join(
             __dirname,
             '..',
@@ -72,14 +73,14 @@ class MiotDevice extends EventEmitter {
                 ].join(':')
                 this.log.debug(`Registered ${key}`)
                 this.propertiesToMonitor[key] = {
+                    ...property,
                     siid: service.iid,
-                    piid: property.iid,
                     desc: `${service.description} - ${property.description}`,
                 }
             })
         })
 
-        await this.loadProperties()
+        await this.loadProperties(undefined, { init: true })
         await this.poll()
 
         return Promise.resolve(this.properties)
@@ -109,15 +110,22 @@ class MiotDevice extends EventEmitter {
         }
     }
 
-    async loadProperties(props?: string[]) {
+    async loadProperties(
+        props?: string[],
+        options: { chunkSize?: number; init?: boolean } = {}
+    ) {
         try {
             if (typeof props === 'undefined') {
                 props = Object.keys(this.propertiesToMonitor)
             }
+
+            props = props.filter((p) =>
+                this.propertiesToMonitor[p].access.includes('read')
+            )
+
             const data: { [key: string]: string } = {}
             const propsChunks = []
-            // Add it as configurable param as it can speed up fetching but cause errors like 16 for purifier 3h
-            const chunkSize = 15
+            const chunkSize = options.chunkSize ?? this.chunkSize
             for (let i = 0; i < props.length; i += chunkSize) {
                 propsChunks.push(props.slice(i, i + chunkSize))
             }
@@ -125,9 +133,11 @@ class MiotDevice extends EventEmitter {
             let result: any[] = []
             for (const propChunk of propsChunks) {
                 const resultChunk = await this.getProperties(propChunk)
+
                 if (!resultChunk) {
-                    throw Error('Properties is empty')
+                    throw Error('Properties are empty')
                 }
+
                 if (resultChunk.length !== propChunk.length) {
                     throw Error(
                         `Result ${JSON.stringify(
@@ -139,6 +149,7 @@ class MiotDevice extends EventEmitter {
                 }
                 result = result.concat(resultChunk)
             }
+
             props.forEach((prop, i) => {
                 data[prop] = result[i]
             })
@@ -152,7 +163,11 @@ class MiotDevice extends EventEmitter {
                         .filter(([key, value]) => oldData[key] !== value)
                         .map(([key, value]) => [
                             key,
-                            { previous: this.properties[key], current: value },
+                            {
+                                previous: this.properties[key],
+                                current: value,
+                                unit: this.propertiesToMonitor[key].unit,
+                            },
                         ])
                 )
             const diff = getDifference(this.properties, data)
@@ -160,10 +175,12 @@ class MiotDevice extends EventEmitter {
             if (Object.keys(diff).length > 0) {
                 this.emit('properties', data)
 
-                this.emit('change', diff)
-                Object.entries(diff).forEach(([key]) => {
-                    this.emit(`change:${key}`, diff[key])
-                })
+                if (!options.init) {
+                    this.emit('change', diff)
+                    Object.entries(diff).forEach(([key]) => {
+                        this.emit(`change:${key}`, diff[key])
+                    })
+                }
 
                 this.properties = data
             }
@@ -177,18 +194,16 @@ class MiotDevice extends EventEmitter {
     async getProperties(props: string[]) {
         const did = this.id
         const params = props.map((prop) => {
-            const { siid, piid } = this.propertiesToMonitor[prop]
+            const { siid, iid: piid } = this.propertiesToMonitor[prop]
             return { did, siid, piid }
         })
 
-        const result = await this.send<{ code: number; value: any }[] | string>(
-            'get_properties',
-            params,
-            {
-                retries: 4,
-                suppress: true,
-            }
-        )
+        const result = await this.send<
+            { code: number; value: ValueType }[] | string
+        >('get_properties', params, {
+            retries: 10,
+            suppress: true,
+        })
 
         if (!Array.isArray(result)) {
             if (result === 'unknown_method') {
@@ -202,40 +217,47 @@ class MiotDevice extends EventEmitter {
             }
         }
 
-        return result.map(({ code, value }) => {
-            if (code === 0) {
-                return value
-            }
-            this.log.debug(`getProperties(props) code:${code} value:${value}`)
-            return undefined
+        return result.map(({ code, value }, index) => {
+            this.log.debug(
+                `Received ${props[index]} code:${code} value:${value}`
+            )
+            return code === 0 ? value : undefined
         })
     }
 
-    async miotSetProperty(
+    async getProperty(prop: string) {
+        return this.getProperties([prop])
+    }
+
+    async setProperty(
         prop: string,
-        value: any,
+        value: ValueType,
         options: { refresh?: boolean } = {}
     ) {
         const def = this.propertiesToMonitor[prop]
+
         if (!def) {
-            throw new Error(`Property ${prop} is not define`)
+            throw new Error(`Property ${prop} is not defined`)
         }
-        const { siid, piid } = def
-        const did = this.id
+
+        if (!def.access.includes('write')) {
+            throw new Error(`Property ${prop} cannot be written`)
+        }
+
         const result = await this.send<{ code: number }[]>('set_properties', [
             {
-                did,
-                siid,
-                piid,
+                did: this.id,
+                siid: def.siid,
+                piid: def.iid,
                 value,
             },
         ])
 
-        if (!result || !result[0] || result[0].code !== 0) {
+        if (result?.[0]?.code !== 0) {
             throw new Error('Could not perform operation')
         }
 
-        if (options.refresh !== false) {
+        if (!options.refresh) {
             await sleep(50)
             await this.loadProperties([prop])
         }
