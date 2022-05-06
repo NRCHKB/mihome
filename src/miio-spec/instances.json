@@ -3,5 +3,10 @@
     "status": "released",
     "model": "roborock.vacuum.a10",
     "version": 1
+  },
+  {
+    "status": "released",
+    "model": "zhimi.airpurifier.mb3",
+    "version": 1
   }
 ]

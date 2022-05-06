@@ -1,0 +1,19 @@
+{
+  "type": "miio:humidifier",
+  "description": "Humidifier",
+  "properties": [
+    {
+      "type": "power",
+      "description": "Power",
+      "format": "bool",
+      "access": ["read", "write"]
+    },
+    {
+      "type": "humidity",
+      "description": "Humidity",
+      "format": "uint8",
+      "unit": "percentage",
+      "access": ["read"]
+    }
+  ]
+}
