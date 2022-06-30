@@ -3,15 +3,16 @@
 import type { CommandBuilder } from 'yargs'
 import { MiProtocol, createDevice } from '../../'
 import DeviceOptions from '../../types/DeviceOptions'
+import Protocol from '../../types/Protocol'
 
 type Options = {
     name: string
     upper: boolean | undefined
 }
 
-export const command: string =
+export const command =
     'device [id] [model] [address] [token] [refresh] [chunkSize] [protocol]'
-export const desc: string = 'Connect to device and list it.'
+export const desc = 'Connect to device and list it.'
 
 export const builder: CommandBuilder<Options, Options> = (yargs) =>
     yargs
@@ -42,7 +43,7 @@ export const builder: CommandBuilder<Options, Options> = (yargs) =>
             default: 15,
         })
         .positional('protocol', {
-            type: 'string',
+            choices: ['miio', 'miot'] as Protocol[],
             describe: 'Protocol',
             default: 'miot',
         })
@@ -56,7 +57,6 @@ export const handler = async (argv: DeviceOptions) => {
         exitCode?: any
     ) {
         device.destroy()
-        if (options.cleanup) console.log('clean')
         if (exitCode || exitCode === 0) console.log(exitCode)
         if (options.exit) process.exit()
     }

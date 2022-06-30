@@ -30,11 +30,14 @@ const createDevice = async (options: DeviceOptions) => {
     if (derivedProtocol === 'miio' && miio) {
         const specExists = await fetchMiioSpec(`${miio.model}:${miio.version}`)
         if (!specExists) {
-            throw Error(`Failed to fetch spec for ${miio}`)
+            throw Error(
+                `Failed to fetch spec for ${miio.model}:${miio.version}`
+            )
         }
+        log.debug(`Using MIIO for ${miio.model}:${miio.version}`)
         return new MiioDevice(
             id,
-            miio.model,
+            `${miio.model}:${miio.version}`,
             address,
             token,
             refresh,
@@ -47,6 +50,7 @@ const createDevice = async (options: DeviceOptions) => {
         if (!specExists) {
             throw Error(`Failed to fetch spec for ${miot}`)
         }
+        log.debug(`Using MIOT for ${miot.model}:${miot.version}`)
         return new MiotDevice(id, miot.type, address, token, refresh, chunkSize)
     }
 

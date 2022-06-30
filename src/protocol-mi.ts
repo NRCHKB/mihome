@@ -12,7 +12,7 @@ class MiProtocol extends EventEmitter {
     protected timeout: number
     protected retries: number
     protected _socket: Socket | undefined
-    protected _serverStampTime: number | undefined
+    protected _serverStampTime: number
     private log: Loggers
 
     constructor() {
@@ -24,6 +24,7 @@ class MiProtocol extends EventEmitter {
         this._devices = new Map()
 
         this.timeout = 2000
+        this._serverStampTime = 0
         this.retries = 2
     }
 
@@ -122,7 +123,7 @@ class MiProtocol extends EventEmitter {
 
             if (data === null) {
                 // hanshake
-                this.log.debug(`${address} -> Handshake reply`)
+                this.log.trace(`${address} -> Handshake reply`)
                 this._onHandshake(address)
             } else {
                 this.log.debug(`${address} -> Data`)
@@ -139,7 +140,7 @@ class MiProtocol extends EventEmitter {
 
         const deviceId = msg.readUInt32BE(8)
         const stamp = msg.readUInt32BE(12)
-        const checksum = msg.slice(16, 32)
+        const checksum = msg.slice(16)
         const encrypted = msg.slice(32)
 
         if (deviceId !== device.id) {
@@ -195,12 +196,25 @@ class MiProtocol extends EventEmitter {
 
         if (!device._token || !device.id) {
             throw new Error(
-                `${address} <- Missing token or deviceId for send command`
+                `${address} <- Missing token or device.id for send command`
             )
         }
 
         const header = Buffer.alloc(2 + 2 + 4 + 4 + 4 + 16)
-        header.writeInt16BE(0x2131)
+        header[0] = 0x21
+        header[1] = 0x31
+        for (let i = 4; i < 32; i++) {
+            header[i] = 0xff
+        }
+        for (let i = 4; i < 8; i++) {
+            header[i] = 0x00
+        }
+
+        // Update the stamp to match server
+        const secondsPassed = Math.floor(
+            (Date.now() - device._serverStampTime) / 1000
+        )
+        header.writeUInt32BE(device._serverStamp + secondsPassed, 12)
 
         // Encrypt the data
         const cipher = crypto.createCipheriv(
@@ -213,29 +227,17 @@ class MiProtocol extends EventEmitter {
         // Set the length
         header.writeUInt16BE(32 + encrypted.length, 2)
 
-        // Unknown
-        header.writeUInt32BE(0x00000000, 4)
-
-        // Stamp
-        if (device._serverStampTime) {
-            const secondsPassed = Math.floor(
-                (Date.now() - device._serverStampTime) / 1000
-            )
-            header.writeUInt32BE(device._serverStamp + secondsPassed, 12)
-        } else {
-            header.writeUInt32BE(0xffffffff, 12)
-        }
-
-        // Device ID
-        header.writeUInt32BE(Number(device.id), 8)
-
-        // MD5 Checksum
+        // Calculate the checksum md5
         const digest = crypto
             .createHash('md5')
             .update(header.slice(0, 16))
             .update(device._token)
             .update(encrypted)
             .digest()
+
+        // Device ID
+        header.writeUInt32BE(Number(device.id), 8)
+
         digest.copy(header, 16)
 
         return Buffer.concat([header, encrypted])
@@ -297,10 +299,10 @@ class MiProtocol extends EventEmitter {
         return this._socketSend(msg, address)
     }
 
-    _send(address: string, json: Record<any, any>) {
+    _send(address: string, request: Record<any, any>) {
         const msg = this._encryptMessage(
             address,
-            Buffer.from(JSON.stringify(json), 'utf8')
+            Buffer.from(JSON.stringify(request), 'utf8')
         )
         return this._socketSend(msg, address)
     }
@@ -463,7 +465,7 @@ class MiProtocol extends EventEmitter {
                         device._promises.set(id, promise)
 
                         // Create the JSON and send it
-                        this.log.debug(
+                        this.log.trace(
                             `${address} <- (${retriesLeft}) ${JSON.stringify(
                                 request
                             )}`

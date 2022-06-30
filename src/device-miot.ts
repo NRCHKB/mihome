@@ -50,7 +50,7 @@ export default class extends EventEmitter {
         })
     }
 
-    async init(): Promise<any> {
+    async init(): Promise<PropertiesMap> {
         const specFilePath = path.join(
             __dirname,
             'miot-spec',

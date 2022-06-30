@@ -8,7 +8,6 @@ const fetch = require('node-fetch-retry')
 const minify = require('node-json-minify')
 
 ;(async () => {
-    console.log('Fetching instances')
     await fetch('https://miot-spec.org/miot-spec-v2/instances?status=all')
         .then(
             async (res: { json: () => MiotInstancesResponse }) =>
@@ -29,7 +28,6 @@ const minify = require('node-json-minify')
         require('../src/miot-spec/instances.json') as MiotInstancesResponse
 
     for (const i of mergedInstancesCache.instances) {
-        console.log(`Fetching ${i.type}`)
         await fetch(
             `https://miot-spec.org/miot-spec-v2/instance?type=${i.type}`,
             { retry: 100, pause: 1000, silent: true }

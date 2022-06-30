@@ -73,6 +73,8 @@ export default class extends EventEmitter {
             this.propertiesToMonitor[key] = property
         })
 
+        await this.send('miIO.info', [])
+
         await this.loadProperties(undefined, { init: true })
         await this.poll()
 
@@ -188,14 +190,14 @@ export default class extends EventEmitter {
     }
 
     async getProperties(props: string[]) {
-        let method = 'get_props'
-
         if (this.type == 'miio:vacuum') {
-            method = 'get_status'
+            return await this.send<any[]>('get_status', [], {
+                retries: 1,
+            })
         }
 
-        return await this.send<any[]>(method, props, {
-            retries: 10,
+        return await this.send<any[]>('get_prop', props, {
+            retries: 1,
         })
     }
 
